@@ -281,7 +281,6 @@ def set_pixel(access_token_in, x, y, color_index_in=18, canvas_index=0):
 
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    #print(response.text)
     if 'errors' in json.loads(response.text):
         print(response.text)
         error_count += 1
