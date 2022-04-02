@@ -42,7 +42,7 @@ color_map = {
     "#9C6926": 25,  # brown
     "#000000": 27,  # black, THE ONE WE USE
     "#898D90": 29,  # grey, THE ONE WE USE
-    "#D4D7D9": 30,  # light grey
+    "#D4D7D9": 30,  # light grey, THE ONE WE USE
     "#FFFFFF": 31,  # white, THE ONE WE USE
 }
 
@@ -54,14 +54,18 @@ def closest_color(target_rgb, rgb_colors_array_in):
     #print(target_rgb)
     r, g, b, a = target_rgb
     #print(r,g,b,a)
-    if a < 255 or (r,g,b) == (69,42,0): # (69, 42, 0) is our transparent color
+    if a < 255 or (r,g,b) == (69,42,255) or (r,g,b) == (69,42,0): # (69, 42, 255) is our transparent color
         return (69,42,0)
     color_diffs = []
     for color in rgb_colors_array_in:
         cr, cg, cb = color
         color_diff = math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2)
         color_diffs.append((color_diff, color))
-    return min(color_diffs)[1]
+
+    min_diff = min(color_diffs)
+    if (min_diff[0] > 2):
+        print("WARNING: your pixel = ", (r,g,b), " Our prediction: ", min_diff[1], " Error: ", min_diff[0])
+    return min_diff[1]
 
 
 rgb_colors_array = []
@@ -72,7 +76,7 @@ for color_hex, color_index in color_map.items():
 
 print("available colors (rgb): ", rgb_colors_array)
 
-image_path = os.path.join(os.path.abspath(os.getcwd()), 'image.jpg')
+image_path = os.path.join(os.path.abspath(os.getcwd()), 'image.png')
 im = Image.open(image_path)
 
 pix = im.convert('RGBA').load()
@@ -237,7 +241,7 @@ def completeness(img):
                 complete += 1#print("Different Pixel found at:",x+pixel_x_start,y+pixel_y_start,"With Color:",pix2[x+pixel_x_start,y+pixel_y_start],"Replacing with:",new_rgb)
                 #pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
             else:
-                pass#print("TransparrentPixel")
+                print("TransparrentPixel")
     printProgressBar(complete,pixels,'Image Progress:','Complete', length = 50)
 
 
@@ -287,7 +291,7 @@ def set_pixel(access_token_in, x, y, color_index_in=18, canvas_index=0):
         if error_count > error_limit:
             print("Some thing bad has happened, you've passed the error limit")
         print("that's probably not good",error_count,"error(s)")
-        print("next pixel in",((float(current_timestamp)-float(json.loads(response.text)['errors'][0]['extensions']['nextAvailablePixelTs'])/1000)),"seconds")
+        print("next pixel in",((float(json.loads(response.text)['errors'][0]['extensions']['nextAvailablePixelTs'])/1000) - float(current_timestamp)),"seconds")
 
 def get_board(bearer):
     print("Getting board")
@@ -387,7 +391,7 @@ def get_unset_pixel(img):
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
                 else:
-                    pass#print("TransparrentPixel")
+                    print("TransparrentPixel")
             elif everything_done:
                 if new_rgb != (69,42,0):
                     print("Nothing to do")
@@ -395,7 +399,7 @@ def get_unset_pixel(img):
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
                 else:
-                    pass#print("TransparrentPixel")
+                    print("TransparrentPixel")
     else:
         x,y = pos
     return x,y
