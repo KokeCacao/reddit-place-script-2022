@@ -10,6 +10,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from PIL import ImageColor
 from PIL import Image
+import requests
 
 # load env variables
 load_dotenv()
@@ -45,6 +46,14 @@ color_map = {
     "#D4D7D9": 30,  # light grey, THE ONE WE USE
     "#FFFFFF": 31,  # white, THE ONE WE USE
 }
+
+def fetch_img():
+    print("Fetching protection plan image from cloud...")
+    r = requests.get('https://kokecacao.me/static/img/image.png')
+    with open('./image.png', 'wb') as outfile:
+        outfile.write(r.content)
+
+fetch_img()
 
 def rgb_to_hex(rgb):
     return ('#%02x%02x%02x' % rgb).upper()
@@ -240,8 +249,8 @@ def completeness(img):
             if new_rgb != (69,42,0):
                 complete += 1#print("Different Pixel found at:",x+pixel_x_start,y+pixel_y_start,"With Color:",pix2[x+pixel_x_start,y+pixel_y_start],"Replacing with:",new_rgb)
                 #pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
-            else:
-                print("TransparrentPixel")
+            # else:
+            #     print("TransparrentPixel")
     printProgressBar(complete,pixels,'Image Progress:','Complete', length = 50)
 
 
@@ -390,16 +399,16 @@ def get_unset_pixel(img):
                     print("Different Pixel found at:",x+pixel_x_start,y+pixel_y_start,"With Color:",pix2[x+pixel_x_start,y+pixel_y_start],"Replacing with:",new_rgb,"Used printer method")
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
-                else:
-                    print("TransparrentPixel")
+                # else:
+                #     print("TransparrentPixel")
             elif everything_done:
                 if new_rgb != (69,42,0):
                     print("Nothing to do")
                     time.sleep(30)
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
-                else:
-                    print("TransparrentPixel")
+                # else:
+                #     print("TransparrentPixel")
     else:
         x,y = pos
     return x,y
@@ -411,6 +420,7 @@ current_c = 0
 # loop to keep refreshing tokens when necessary and to draw pixels when the time is right
 while True:
     placing = False
+    fetch_img()
 
     #does things
     for name, info in accounts.items():
