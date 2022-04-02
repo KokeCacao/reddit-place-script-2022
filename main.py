@@ -24,6 +24,7 @@ else:
 
 # map of colors for pixels you can place
 color_map = {
+    "#C03A38": 1,  # dark red
     "#FF4500": 2,  # bright red
     "#FFA800": 3,  # orange
     "#FFD635": 4,  # yellow
