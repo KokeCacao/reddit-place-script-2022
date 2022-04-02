@@ -404,6 +404,7 @@ def get_unset_pixel(img):
             elif everything_done:
                 if new_rgb != (69,42,0):
                     print("Nothing to do")
+                    fetch_img()
                     time.sleep(30)
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
