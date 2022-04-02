@@ -26,8 +26,6 @@ ENV_PLACE_USERNAME='["your_reddit_developer_username"]'
 ENV_PLACE_PASSWORD='["your_reddit_password"]'
 ENV_PLACE_APP_CLIENT_ID='["app_client_id"]'
 ENV_PLACE_SECRET_KEY='["app_secret_key"]'
-ENV_DRAW_X_START="1899"
-ENV_DRAW_Y_START="120"
 ENV_R_START='["0"]'
 ENV_C_START='["0"]'
 ```
@@ -36,8 +34,6 @@ ENV_C_START='["0"]'
 - ENV_PLACE_PASSWORD is the password of the developer account
 - ENV_PLACE_APP_CLIENT_ID is the client id for the app / script registered with Reddit (under "personal use script", something like `Q98s00Gkb7CnOZgXoj917Q`)
 - ENV_PLACE_SECRET_KEY is the secret key for the app / script registered with Reddit (above "name", something like `LKfIHcTs5pct0VZPgXT99IgAUXpTsg`)
-- ENV_DRAW_X_START don't change it
-- ENV_DRAW_Y_START don't change it
 - ENV_R_START don't change it
 - ENV_C_START don't change it
 
@@ -50,7 +46,7 @@ Install [conda](https://docs.conda.io/en/latest/miniconda.html) if you haven't
 conda create --name reddit python=3.8
 conda activate reddit
 conda install --yes --file requirements.txt --channel conda-forge
-conda install --yes pillow requests python-dotenv websocket-client --channel conda-forge
+conda install --yes pillow requests python-dotenv websocket-client colorama --channel conda-forge
 python3 main.py
 ```
 
