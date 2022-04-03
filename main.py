@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from PIL import ImageColor
 from PIL import Image
 import requests
+import sys
 
 # load env variables
 load_dotenv()
@@ -18,6 +19,7 @@ load_dotenv()
 # pixel drawing preferences
 pixel_x_start = 1743
 pixel_y_start = 664
+fetch = True
 
 # map of colors for pixels you can place
 color_map = {
@@ -48,10 +50,25 @@ color_map = {
 }
 
 def fetch_img():
+    if not fetch: 
+        print("You decided not to fetch from the consensus server")
+        return
     print("Fetching protection plan image from cloud...")
     r = requests.get('https://kokecacao.me/static/img/image.png')
     with open('./image.png', 'wb') as outfile:
         outfile.write(r.content)
+    r = requests.get('https://kokecacao.me/static/img/plan.txt')
+    with open('./plan.txt', 'wb') as outfile:
+        outfile.write(r.content)
+    with open('./plan.txt', 'r') as outfile:
+        lines = outfile.read()
+        first = lines.split('\n', 1)[0]
+        param = first.split(' ', 2)
+        global pixel_x_start
+        global pixel_y_start
+        pixel_x_start = int(param[0])
+        pixel_y_start = int(param[1])
+    print("Fetching successful! Draw from: ({}, {}) Announcement: {}".format(pixel_x_start, pixel_y_start, param[2]))
 
 fetch_img()
 
@@ -136,7 +153,7 @@ accounts = {
 
 # this is horrible, but i'm too lazy to make it not bad
 def fill_accounts():
-    print("aaaa",len(json.loads(os.getenv('ENV_PLACE_USERNAME'))),
+    print("How many accounts: ",len(json.loads(os.getenv('ENV_PLACE_USERNAME'))),
         len(json.loads(os.getenv('ENV_PLACE_PASSWORD'))),
         len(json.loads(os.getenv('ENV_PLACE_APP_CLIENT_ID'))),
         len(json.loads(os.getenv('ENV_PLACE_SECRET_KEY'))))
@@ -197,7 +214,8 @@ def get_valid_auth(name):
     #print(accounts[name]['access_token'] is None, current_timestamp >= accounts[name]['expires_at_timestamp'])
     # refresh access token if necessary
     if accounts[name]['access_token'] is None or current_timestamp >= accounts[name]['expires_at_timestamp']:
-        print("refreshing access token for",name,"...")
+        print("refreshing access token for {}...".format(name))
+        sys.stdout.write("\033[F")
 
         headers = {
             'user-agent': 'Mozilla/5.0 (Macintosh; PPC Mac OS X 10_8_7 rv:5.0; en-US) AppleWebKit/533.31.5 (KHTML, like Gecko) Version/4.0 Safari/533.31.5',
@@ -223,7 +241,7 @@ def get_valid_auth(name):
         accounts[name]['expires_at_timestamp'] = current_timestamp + int(response_data["expires_in"])  # this is usually "3600"
         accounts[name]['access_token_scope'] = response_data["scope"]  # this is usually "*"
 
-        print("received new access token: ", accounts[name]['access_token'])
+        print("received new access token: {}".format(accounts[name]['access_token']))
 
 def completeness(img):
     x = 0
@@ -263,7 +281,8 @@ error_limit = 10
 def set_pixel(access_token_in, x, y, color_index_in=18, canvas_index=0):
     global error_count
     global error_limit
-    print("placing pixel")
+    print("...placing pixel...")
+    sys.stdout.write("\033[F")
 
     url = "https://gql-realtime-2.reddit.com/query"
 
@@ -299,11 +318,12 @@ def set_pixel(access_token_in, x, y, color_index_in=18, canvas_index=0):
         error_count += 1
         if error_count > error_limit:
             print("Some thing bad has happened, you've passed the error limit")
-        print("that's probably not good",error_count,"error(s)")
-        print("next pixel in",((float(json.loads(response.text)['errors'][0]['extensions']['nextAvailablePixelTs'])/1000) - float(current_timestamp)),"seconds")
+        print("Next pixel in {} seconds ({} error(s))".format(((float(json.loads(response.text)['errors'][0]['extensions']['nextAvailablePixelTs'])/1000) - float(current_timestamp)), error_count))
 
 def get_board(bearer):
-    print("Getting board")
+    print("...getting board...")
+    sys.stdout.write("\033[F")
+
     ws = create_connection("wss://gql-realtime-2.reddit.com/query")
     ws.send(json.dumps({"type":"connection_init","payload":{"Authorization":"Bearer "+bearer}}))
     ws.recv()
@@ -317,7 +337,6 @@ def get_board(bearer):
     already_added = []
     for i in range(0, image_sizex*image_sizey):
         ws.send(json.dumps({"id":str(2+i),"type":"start","payload":{"variables":{"input":{"channel":{"teamOwner":"AFD2022","category":"CANVAS","tag":str(i)}}},"extensions":{},"operationName":"replace","query":"subscription replace($input: SubscribeInput!) {\n  subscribe(input: $input) {\n    id\n    ... on BasicMessage {\n      data {\n        __typename\n        ... on FullFrameMessageData {\n          __typename\n          name\n          timestamp\n        }\n        ... on DiffFrameMessageData {\n          __typename\n          name\n          currentTimestamp\n          previousTimestamp\n        }\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"}}))
-        file = ""
         while True:
             temp = json.loads(ws.recv())
             #print("\n",temp)
@@ -342,8 +361,6 @@ def get_board(bearer):
         new_im.paste(img, (x_offset,0))
         x_offset += img.size[0]
 
-    print("Got image:", file)
-
     return new_im
 
 def get_unset_pixel(img):
@@ -362,7 +379,7 @@ def get_unset_pixel(img):
         if pix2[x+pixel_x_start,y+pixel_y_start] != new_rgb:
             #print(pix2[x+pixel_x_start,y+pixel_y_start], new_rgb,new_rgb != (69,42,0), pix2[x,y] != new_rgb)
             if new_rgb != (69,42,0):
-                print("Different Pixel found at:",x+pixel_x_start,y+pixel_y_start,"With Color:",pix2[x+pixel_x_start,y+pixel_y_start],"Replacing with:",new_rgb,"Used Fill method")
+                print("\nDifferent Pixel found at: ({}, {}) with color {}. Replacing with color {} using Fill method".format(x+pixel_x_start, y+pixel_y_start, pix2[x+pixel_x_start,y+pixel_y_start], new_rgb))
                 pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                 return x, y
         else:
@@ -396,14 +413,14 @@ def get_unset_pixel(img):
             if pix2[x+pixel_x_start,y+pixel_y_start] != new_rgb:
                 #print(pix2[x+pixel_x_start,y+pixel_y_start], new_rgb,new_rgb != (69,42,0), pix2[x,y] != new_rgb)
                 if new_rgb != (69,42,0):
-                    print("Different Pixel found at:",x+pixel_x_start,y+pixel_y_start,"With Color:",pix2[x+pixel_x_start,y+pixel_y_start],"Replacing with:",new_rgb,"Used printer method")
+                    print("\nDifferent Pixel found at: ({}, {}) with color {}. Replacing with color {} using Printer method".format(x+pixel_x_start, y+pixel_y_start, pix2[x+pixel_x_start,y+pixel_y_start], new_rgb))
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
                 # else:
                 #     print("TransparrentPixel")
             elif everything_done:
                 if new_rgb != (69,42,0):
-                    print("Nothing to do")
+                    print("...Nothing to do...")
                     fetch_img()
                     time.sleep(30)
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
@@ -443,7 +460,7 @@ while True:
             new_rgb_hex = rgb_to_hex(new_rgb)
             pixel_color_index = color_map[new_rgb_hex]
 
-            print("\nAccount Placing: ",name,"\n")
+            print("Account Placing: {}".format(name))
 
             # draw the pixel onto r/place
             #There's a better way to do this
