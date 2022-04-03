@@ -498,4 +498,5 @@ while True:
             placing = True
 
         time.sleep((pixel_place_frequency/len(accounts))+1)
+        fetch_img(get_accounts())
     time.sleep(10)
