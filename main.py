@@ -49,28 +49,40 @@ color_map = {
     "#FFFFFF": 31,  # white, THE ONE WE USE
 }
 
-def fetch_img():
+def get_accounts():
+    return json.loads(os.getenv('ENV_PLACE_USERNAME'))
+
+def fetch_img(accounts):
+    if accounts is None: return
+    global pixel_x_start
+    global pixel_y_start
     if not fetch: 
         print("You decided not to fetch from the consensus server")
-        return
-    print("Fetching protection plan image from cloud...")
-    r = requests.get('https://kokecacao.me/static/img/image.png')
-    with open('./image.png', 'wb') as outfile:
-        outfile.write(r.content)
-    r = requests.get('https://kokecacao.me/static/img/plan.txt')
-    with open('./plan.txt', 'wb') as outfile:
-        outfile.write(r.content)
-    with open('./plan.txt', 'r') as outfile:
-        lines = outfile.read()
-        first = lines.split('\n', 1)[0]
-        param = first.split(' ', 2)
-        global pixel_x_start
-        global pixel_y_start
-        pixel_x_start = int(param[0])
-        pixel_y_start = int(param[1])
-    print("Fetching successful! Draw from: ({}, {}) Announcement: {}".format(pixel_x_start, pixel_y_start, param[2]))
+        if os.path.exists('./plan.txt'):
+            with open('./plan.txt', 'r') as outfile:
+                lines = outfile.read()
+                first = lines.split('\n', 1)[0]
+                param = first.split(' ', 2)
+                pixel_x_start = int(param[0])
+                pixel_y_start = int(param[1])
+                print("According to your plan.txt, Draw from: ({}, {}) Announcement: {}".format(pixel_x_start, pixel_y_start, param[2]))
+    else:
+        print("Fetching protection plan image from cloud...")
+        try:
+            r = requests.get('https://kokecacao.me/static/img/image.png')
+            with open('./image.png', 'wb') as outfile:
+                outfile.write(r.content)
+            
+            first = requests.get("https://kokecacao.me/rplace", params={'accounts': ', '.join(accounts)}).text
+            
+            param = first.split(' ', 2)
+            pixel_x_start = int(param[0])
+            pixel_y_start = int(param[1])
+            print("Fetch Success, Draw from: ({}, {}) Announcement: {}".format(pixel_x_start, pixel_y_start, param[2]))
+        except:
+            print("Fetch Failed")
 
-fetch_img()
+fetch_img(get_accounts())
 
 def rgb_to_hex(rgb):
     return ('#%02x%02x%02x' % rgb).upper()
@@ -153,6 +165,7 @@ accounts = {
 
 # this is horrible, but i'm too lazy to make it not bad
 def fill_accounts():
+    print("Accounts: {}".format(get_accounts()))
     print("How many accounts: ",len(json.loads(os.getenv('ENV_PLACE_USERNAME'))),
         len(json.loads(os.getenv('ENV_PLACE_PASSWORD'))),
         len(json.loads(os.getenv('ENV_PLACE_APP_CLIENT_ID'))),
@@ -421,7 +434,7 @@ def get_unset_pixel(img):
             elif everything_done:
                 if new_rgb != (69,42,0):
                     print("...Nothing to do...")
-                    fetch_img()
+                    fetch_img(get_accounts())
                     time.sleep(30)
                     pix2[x+pixel_x_start,y+pixel_y_start] = new_rgb
                     break;
@@ -438,7 +451,7 @@ current_c = 0
 # loop to keep refreshing tokens when necessary and to draw pixels when the time is right
 while True:
     placing = False
-    fetch_img()
+    fetch_img(get_accounts())
 
     #does things
     for name, info in accounts.items():
